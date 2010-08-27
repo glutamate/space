@@ -34,7 +34,7 @@ displayPolygons polys = do
  loadIdentity
  forM_ polys $ \(Poly pts col) -> do
         color $ toGLColour col
-        renderPrimitive Quads $ forM_ pts $ vertex . vertex3d 
+        renderPrimitive Polygon $ forM_ pts $ vertex . vertex3d 
  --threadDelay $ 300*1000
  swapBuffers 
          
@@ -60,6 +60,6 @@ initGlScreen = do
   --blend $= Enabled 
     --cullFace $= Just Back
   blendFunc $= (SrcAlphaSaturate, One)
-  multisample $= Enabled
+  multisample $= Enabled 
   swapBuffers
 

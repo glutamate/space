@@ -1,7 +1,11 @@
 {-# LANGUAGE EmptyDataDecls #-}
 {-# OPTIONS_GHC -fglasgow-exts #-}
+{-# OPTIONS_GHC -fwarn-incomplete-patterns  #-}
 
 module Dims where
+
+data TTrue
+data TFalse
 
 data Z 
 
@@ -39,10 +43,12 @@ instance Functor (Vec n) where
 vop2 :: (a -> b -> c) -> Vec n a -> Vec n b -> Vec n c
 vop2 f VNil VNil = VNil
 vop2 f (VCons x vx) (VCons y vy) = VCons (f x y) $ vop2 f vx vy
+vop2 f _ _ = undefined
 
 instance Eq a => Eq (Vec n a) where
    VNil == VNil = True
    VCons x vx == VCons y vy = x==y && vx == vy
+   _ == _ = False
 
 instance Show a => Show (Vec n a) where
    show VNil = "VNil"
@@ -76,4 +82,9 @@ uvz = VCons 0 $ VCons 0 $ VCons 1 $ VNil
 orig :: Vec Three Double
 orig = VCons 0 $ VCons 0 $ VCons 0 $ VNil
 
-scalar .* v = fmap (*scalar) v
+(.*) :: Double -> Vec n Double -> Vec n Double
+(.*) = scalarMul
+
+scalarMul :: Double -> Vec n Double -> Vec n Double
+scalarMul scalar v = fmap (*scalar) v
+
