@@ -1,33 +1,17 @@
-{-# LANGUAGE EmptyDataDecls #-}
 {-# OPTIONS_GHC -fglasgow-exts #-}
 
 module Dims where
 
+--type-level integers
 data Z 
+data S a
 
-newtype S a = S { unS :: a }
-
-type One = S Z
-type Two = S One
-type Three = S Two
-
-class TyInt a where
-    toInt :: a -> Int
-
-instance TyInt Z where
-    toInt _ = 0
-
-instance TyInt a => TyInt (S a) where
-    toInt = (1+) . toInt . unS
-
+--we will cleanly separate coordinate systems with phantom types, runST-style
+--but every coordinate system must have a number of dimensions
 class NDims s where
    type ND s :: *
 
-data RealWorld
-
-instance NDims RealWorld where
-    type ND RealWorld = Three
-
+--Vectors
 data Vec n a where
    VNil :: Vec Z a
    VCons :: a -> Vec m a -> Vec (S m) a
@@ -54,7 +38,7 @@ instance Num a => Num (Vec n a) where
    vx * vy = vop2 (*) vx vy
    abs = fmap abs
    signum = fmap signum
-   fromInteger i = error $ "fromInteger on vector" 
+   fromInteger i = undefined --VNil
 
 {-instance (Num a, Num (Vec n a)) => Num (Vec (S n) a) where
    vx + vy = vop2 (+) vx vy
@@ -64,16 +48,9 @@ instance Num a => Num (Vec n a) where
    signum = fmap signum
    fromInteger i = VCons (fromInteger i) $ fromInteger i -}
 
-uvx :: Vec Three Double
-uvx = VCons 1 $ VCons 0 $ VCons 0 $ VNil
+--a point in space, with an associated value
+data Point s a where
+     Point:: NDims s => Vec (ND s) Double -> a -> Point s a
 
-uvy :: Vec Three Double
-uvy = VCons 0 $ VCons 1 $ VCons 0 $ VNil
-
-uvz :: Vec Three Double
-uvz = VCons 0 $ VCons 0 $ VCons 1 $ VNil
-
-orig :: Vec Three Double
-orig = VCons 0 $ VCons 0 $ VCons 0 $ VNil
-
-scalar .* v = fmap (*scalar) v
+translatePoint :: NDims s => Vec (ND s) Double -> Point s a -> Point s a
+translatePoint vectr (Point vecpt x) = Point (vecpt+vectr) x
