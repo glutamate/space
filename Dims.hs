@@ -1,4 +1,4 @@
-{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE EmptyDataDecls, UndecidableInstances #-}
 {-# OPTIONS_GHC -fglasgow-exts #-}
 {-# OPTIONS_GHC -fwarn-incomplete-patterns  #-}
 
@@ -24,13 +24,21 @@ instance TyInt Z where
 instance TyInt a => TyInt (S a) where
     toInt = (1+) . toInt . unS
 
-class NDims s where
-   type ND s :: *
+type family Plus a b :: *
+
+type instance Plus a Z = a
+type instance Plus a (S b) = Plus (S a) b
+
+type family NDims s :: *
+
+--class NDims s where
+--   type ND s :: *
 
 data RealWorld
+type instance NDims RealWorld = Three
 
-instance NDims RealWorld where
-    type ND RealWorld = Three
+--instance NDims RealWorld where
+--    type ND RealWorld = Three
 
 data Vec n a where
    VNil :: Vec Z a

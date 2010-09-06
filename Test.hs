@@ -11,10 +11,10 @@ data LocustView
 instance GLSpace LocustView where
      glsFrustrum _ =  (-0.2, 0.2, -0.15, 0.15, 0.163, 100.0)
 
-instance NDims LocustView where
-   type ND LocustView = Three
+type instance NDims LocustView = Three
+
  
-unitBox :: (NDims s, ND s ~ Three) => [Polygon s ()]
+unitBox :: (NDims s ~ Three) => [Polygon s ()]
 unitBox = uB where
   fz = Poly [pnt orig, pnt uvx, pnt (uvx+uvy), pnt uvy] ()
   fx = Poly [pnt orig, pnt uvy, pnt (uvz+uvy), pnt uvz] ()
@@ -27,6 +27,6 @@ box = translates (scalarMul (-10.0) uvz) $ tags (1, 0, 0) $ unitBox
 main = do
    initGlScreen
    print box
-   displayPolygons box
+   render box
    waitSecs 1
 
