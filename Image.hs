@@ -15,23 +15,29 @@ data Image s a where
      ImArray :: (Storable a, NDims s ~ n) => Vec n Int -> SV.Vector a -> Image s a
      ImFmap :: (a->b) -> Image s a -> Image s b
 
-at :: Image s a -> Vec n Int -> a
-at (ImFmap f im) xy = f $ im `at` xy
-at (ImArray w h arr) (x,y) = arr `SV.index` (w*y+x)
+at :: (NDims s ~ n) => Image s a -> Vec n Int -> a
+at (ImFmap f im) v = f $ im `at` v
+at (ImArray vsz arr) vix = arr `SV.index` vec2ImIx vix vsz -- (w*y+x)
 
-imageSize :: Image s a -> Vec n Int
+-- this is probably wrong for 3D. Need to raise to power? better now?
+vec2ImIx :: Vec n Int -> Vec n Int -> Int 
+vec2ImIx VNil _ = 0
+vec2ImIx (x:::vix) (w :::vsz) = x+w*vec2ImIx vix vsz 
+vec2ImIx _ _ = error "vec2ImIx"
+
+imageSize :: (NDims s ~ n) => Image s a -> Vec n Int
 imageSize (ImFmap _ im) = imageSize im
-imageSize (ImArray x y _) = (x,y)             
+imageSize (ImArray vsz _) = vsz
 
 --unfoldrN :: Storable b => Int -> (a -> Maybe (b, a)) -> a -> (Vector b, Maybe a)	Source
-fillImage :: (Storable a, NDims s ~ n) => Vec n Int -> (Vec n Int -> a) -> Image s a
-fillImage w h f = ImArray w h $ fst $ SV.unfoldrN (w*h) unf (0,0) 
+fillImage :: (Storable a, NDims s ~ Two) => Int -> Int -> (Int -> Int -> a) -> Image s a
+fillImage w h f = ImArray (w .:: h) $ fst $ SV.unfoldrN (w*h) unf (0,0) 
    where unf (x,y) | x < w = Just (f x y, (x+1, y))
                    | y < (h-1) = Just (f 0 (y+1), (1, y+1))
                    | otherwise = Nothing
 
 fillImageLists :: (Storable a, NDims s ~ Two) => Int -> Int -> [[a]] -> Image s a
-fillImageLists w h lsts = ImArray w h $ SV.concat $ map SV.pack lsts
+fillImageLists w h lsts = ImArray ( w .:: h ) $ SV.concat $ map SV.pack lsts 
 
 loadPNG :: (NDims s~ Two) => FilePath -> IO (Image s (Int,Int,Int))
 loadPNG fp = do
@@ -42,19 +48,23 @@ loadPNG fp = do
 
 savePNG :: (NDims s ~ Two) => FilePath -> Image s (Int,Int,Int) -> IO ()
 savePNG fp img = do
-  let (w,h) = imageSize img
+  ((w ::: h::: VNil)::Vec Two Int) <- return $ imageSize img
+  print (w,h)
   gdIm <- GD.newImage (w,h)
   forM_ [0..w-1] $ \x-> 
-        forM_ [0..h-1] $ \y-> 
-            let (r,g,b) = img `at` (x,y) 
-            in GD.setPixel (x,y) (GD.rgb r g b) gdIm 
+        forM_ [0..h-1] $ \y-> do
+            let (r,g,b) = img `at` (x .:: y)            
+            GD.setPixel (x,y) (GD.rgb r g b) gdIm 
   GD.savePngFile fp gdIm
 
 ti = do in2d `fmap` loadPNG "test.png"
         return ()
 tst = [x+y*10 | x<- [0..9], y <- [0..9]]
 
-t1 = savePNG "test.png" $ in2d $ fillImage 100 100 $ \x y -> c ((x+y) `mod` 3)
+t2 = vec2ImIx (90.::99) (100.::100)
+
+t1 = savePNG "test1.png" $ in2d $ fillImage 50 50 $ \x y -> c ((x+y) `mod` 3)
+t3 = savePNG "test3.png" $ in2d $ fillImage 255 255 $ \x y -> (x, 0, y)
 
 c 0 = (255,0,0)
 c 1 = (0,255,0)

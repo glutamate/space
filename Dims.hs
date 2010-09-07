@@ -40,27 +40,37 @@ type instance NDims RealWorld = Three
 --instance NDims RealWorld where
 --    type ND RealWorld = Three
 
+vecDims :: Vec n a -> Int
+vecDims (VNil) = 0
+vecDims (_:::vs) = 1 + vecDims vs
+
+infixr 2 :::
+infixr 2 .::
+
+x .:: y = x ::: y :::VNil
+
+
 data Vec n a where
    VNil :: Vec Z a
-   VCons :: a -> Vec m a -> Vec (S m) a
+   (:::) :: a -> Vec m a -> Vec (S m) a
 
 instance Functor (Vec n) where
     fmap f VNil = VNil
-    fmap f (VCons x vx) = VCons (f x) $ fmap f vx
+    fmap f (x:::vx) = (f x) ::: fmap f vx
 
 vop2 :: (a -> b -> c) -> Vec n a -> Vec n b -> Vec n c
 vop2 f VNil VNil = VNil
-vop2 f (VCons x vx) (VCons y vy) = VCons (f x y) $ vop2 f vx vy
+vop2 f (x:::vx) (y:::vy) =  (f x y) ::: vop2 f vx vy
 vop2 f _ _ = undefined
 
 instance Eq a => Eq (Vec n a) where
    VNil == VNil = True
-   VCons x vx == VCons y vy = x==y && vx == vy
+   (x ::: vx) == (y ::: vy) = x==y && vx == vy
    _ == _ = False
 
 instance Show a => Show (Vec n a) where
    show VNil = "VNil"
-   show (VCons x vx) = show x ++"::"++show vx
+   show (x :::vx) = show x ++":::"++show vx
 
 instance Num a => Num (Vec n a) where
    vx + vy = vop2 (+) vx vy
@@ -79,16 +89,16 @@ instance Num a => Num (Vec n a) where
    fromInteger i = VCons (fromInteger i) $ fromInteger i -}
 
 uvx :: Vec Three Double
-uvx = VCons 1 $ VCons 0 $ VCons 0 $ VNil
+uvx = 1 ::: 0 .:: 0
 
 uvy :: Vec Three Double
-uvy = VCons 0 $ VCons 1 $ VCons 0 $ VNil
+uvy = 0 ::: 1 ::: 0 ::: VNil
 
 uvz :: Vec Three Double
-uvz = VCons 0 $ VCons 0 $ VCons 1 $ VNil
+uvz = 0 ::: 0 ::: 1 ::: VNil
 
 orig :: Vec Three Double
-orig = VCons 0 $ VCons 0 $ VCons 0 $ VNil
+orig = 0::: 0 ::: 0 ::: VNil
 
 (.*) :: Double -> Vec n Double -> Vec n Double
 (.*) = scalarMul
