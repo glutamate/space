@@ -106,3 +106,12 @@ orig = 0::: 0 ::: 0 ::: VNil
 scalarMul :: Double -> Vec n Double -> Vec n Double
 scalarMul scalar v = fmap (*scalar) v
 
+vecIx :: Int -> Vec n a -> a
+vecIx 0 (x:::_) = x
+vecIx n (x:::xs) = vecIx (n-1) xs
+vecIx _ VNil = error "vecIx out of bounds"
+
+safevecIx :: Int -> Vec n a -> Maybe a
+safevecIx 0 (x:::_) = Just x
+safevecIx n (x:::xs) = safevecIx (n-1) xs
+safevecIx _ VNil = Nothing

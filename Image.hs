@@ -1,3 +1,4 @@
+{-# LANGUAGE EmptyDataDecls, UndecidableInstances, ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fglasgow-exts #-}
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
@@ -35,6 +36,16 @@ fillImage w h f = ImArray (w .:: h) $ fst $ SV.unfoldrN (w*h) unf (0,0)
    where unf (x,y) | x < w = Just (f x y, (x+1, y))
                    | y < (h-1) = Just (f 0 (y+1), (1, y+1))
                    | otherwise = Nothing
+
+fillImage':: forall b s n. (Storable b, NDims s ~ n) => Vec n Int -> (Vec n Int -> b) -> Image s b
+fillImage' vsz f = ImArray vsz $ fst $ SV.unfoldrN (vec2ImIx vsz vsz) (unf vsz) (fmap (const 0) vsz)
+   where unf :: Vec n Int -> Vec n Int -> Maybe (b, Vec n Int)
+         --unf _ VNil = Nothing
+         unf (w:::vsz) vix@(x:::vix') | x < w = Just (f vix, (x+1):::vix') {- | x < w = Just (f x y, (x+1, y))
+                                      
+                    | y < (h-1) = Just (f 0 (y+1), (1, y+1))
+                   | otherwise = Nothing-}
+
 
 fillImageLists :: (Storable a, NDims s ~ Two) => Int -> Int -> [[a]] -> Image s a
 fillImageLists w h lsts = ImArray ( w .:: h ) $ SV.concat $ map SV.pack lsts 
