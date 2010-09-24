@@ -63,6 +63,23 @@ vop2 f VNil VNil = VNil
 vop2 f (x:::vx) (y:::vy) =  (f x y) ::: vop2 f vx vy
 vop2 f _ _ = undefined
 
+vzip :: Vec n a -> Vec n b -> Vec n (a,b)
+vzip = vop2 (,)
+
+vfold :: (a -> b -> a) -> a -> Vec n b -> a
+vfold f acc VNil = acc
+vfold f acc (x:::xs) = vfold f (f acc x) xs
+
+vany, vall :: (a->Bool) -> Vec n a -> Bool
+vany p = vfold (\acc x -> p x || acc) False 
+vall p = vfold (\acc x -> p x && acc) True 
+
+vsum :: (Num a) => Vec n a -> a
+vsum = vfold (+) 0 
+
+squarev :: (Num a) => Vec n a -> Vec n a
+squarev = fmap (\x->x*x)
+
 instance Eq a => Eq (Vec n a) where
    VNil == VNil = True
    (x ::: vx) == (y ::: vy) = x==y && vx == vy

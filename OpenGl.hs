@@ -4,6 +4,7 @@ module OpenGl where
 
 import Dims
 import Space
+import Volume
 
 import Graphics.Rendering.OpenGL hiding (Sink, get, Point)
 import Graphics.UI.GLFW -- hiding (Sink, get)
@@ -18,30 +19,29 @@ toGLColour :: Colour -> Color3 GLfloat
 toGLColour (r,g,b) = Color3 (realToFrac r) (realToFrac g) (realToFrac b)
  
 vertex3d :: (NDims s ~ Three) => Point s a -> Vertex3 GLfloat
-vertex3d (Point (VCons x (VCons y (VCons z VNil))) _) = Vertex3 (realToFrac x) (realToFrac y) (realToFrac z)
-
-class HasSpace r where
-    type TheSpace r :: *
-    toSpace :: TheSpace r ~ s => r -> s 
-    toSpace = undefined 
-
-instance HasSpace (Polygon s a) where
-    type TheSpace (Polygon s a) = s
-
-instance HasSpace t => HasSpace [t] where
-    type TheSpace [t] = TheSpace t
+vertex3d (Point (x ::: y ::: z :::VNil) _) = Vertex3 (realToFrac x) (realToFrac y) (realToFrac z)
 
 class Renderable r where
     renderIt :: r -> IO ()
 
-instance (GLSpace s, NDims s ~ Three) => Renderable (Polygon s Colour) where
-    renderIt (Poly pts col) = do
-         color $ toGLColour col
+class Surface a where
+      withSurface :: a -> IO () -> IO ()
+instance Surface Colour where
+      withSurface col ma = color (toGLColour col) >> ma
+
+instance (GLSpace s, NDims s ~ Three, Surface a) => Renderable (Polygon s a) where
+    renderIt (Poly pts col) = withSurface col $ do
          renderPrimitive Polygon $ forM_ pts $ vertex . vertex3d 
 
 instance Renderable r => Renderable [r] where
     renderIt = mapM_ renderIt
 
+
+instance (GLSpace s, NDims s ~ Three, Surface a) => Renderable (Cuboid s a) where
+    renderIt (Cuboid v col) = withSurface col $ renderIt box
+       where box :: [Polygon s a]
+             box = map (polyTag col) $ map (stretchPoly v) $ unitBox
+        
 
 render :: (GLSpace s, NDims s ~ Three, HasSpace r, TheSpace r ~ s, Renderable r) => r -> IO ()
 render x = do
@@ -59,7 +59,7 @@ render x = do
 initGlScreen = do
   initialize
   --when ("-aa" `elem` args) $ do
-  openWindowHint $= (FSAASamples, 1)
+  --openWindowHint $= (FSAASamples, 1)
   openWindow (Size 640 480) [
                   DisplayRGBBits 8 8 8,
                   DisplayAlphaBits 8,
@@ -70,14 +70,14 @@ initGlScreen = do
   swapInterval $= 1
   clearColor $= Color4 0 0 0 0
   clear [ColorBuffer]
-  lineSmooth $= Enabled
-  polygonSmooth $= Enabled
-  hint PolygonSmooth $= Nicest
-  hint LineSmooth $= Nicest
-  hint PointSmooth $= Nicest
+  --lineSmooth $= Enabled
+  --polygonSmooth $= Enabled
+  --hint PolygonSmooth $= Nicest
+  --hint LineSmooth $= Nicest
+  --hint PointSmooth $= Nicest
   --blend $= Enabled 
     --cullFace $= Just Back
-  blendFunc $= (SrcAlphaSaturate, One)
-  multisample $= Enabled 
+  --blendFunc $= (SrcAlphaSaturate, One)
+  --multisample $= Enabled 
   swapBuffers
 

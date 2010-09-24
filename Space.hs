@@ -21,6 +21,20 @@ data Polygon s a where
 instance Functor (Polygon s) where 
     fmap f (Poly pts x) = Poly pts $ f x
  
+unitBox :: (NDims s ~ Three) => [Polygon s ()]
+unitBox = uB where
+  fz = Poly [pnt orig, pnt uvx, pnt (uvx+uvy), pnt uvy] ()
+  fx = Poly [pnt orig, pnt uvy, pnt (uvz+uvy), pnt uvz] ()
+  fy = Poly [pnt orig, pnt uvz, pnt (uvz+uvx), pnt uvx] ()
+  uB = [fz, fx, fy, translate uvz fz, translate uvx fx, translate uvy fy] 
+
+polyTag :: a -> Polygon s () -> Polygon s a
+polyTag x (Poly p _) =  Poly p x
+
+stretchPoly :: Vec (NDims s) Double -> Polygon s a -> Polygon s a
+stretchPoly v (Poly pts a) = Poly (map g pts) a
+   where g (Point vp x) = Point (vp*v) x
+
 data Shape s a where
     Polys :: [Polygon s a] -> Shape s a
     Translate :: Vec (NDims s) Double -> Shape s a -> Shape s a
@@ -62,3 +76,14 @@ pnt v = Point v ()
 
 tag x =fmap (const x)
 tags x = map $ tag x
+
+class HasSpace r where
+    type TheSpace r :: *
+    toSpace :: TheSpace r ~ s => r -> s 
+    toSpace = undefined 
+
+instance HasSpace (Polygon s a) where
+    type TheSpace (Polygon s a) = s
+
+instance HasSpace t => HasSpace [t] where
+    type TheSpace [t] = TheSpace t
