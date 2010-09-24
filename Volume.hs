@@ -53,11 +53,11 @@ data VMinus v1 v2 s a where
 instance (Volume v1, Volume v2) => Volume (VMinus v1 v2) where
     inside (VMinus v1 v2) pt = inside v1 pt && not (inside v2 pt)
 
---GADT approach
+instance HasSpace (Cuboid s a) where
+   type TheSpace (Cuboid s a) = s
 
-data VolumeG v s a where
-    Vol :: v -> a -> (v -> Vec (NDims s) Double -> Bool) -> VolumeG v s a
+instance HasSpace (Spheroid s a) where
+   type TheSpace (Spheroid s a) = s
 
-insideG :: VolumeG v s a -> Point s b -> Bool
-insideG (Vol vv _ f) (Point v _) = f vv v
-
+instance HasSpace (v s a) => HasSpace (Translated v s a) where
+   type TheSpace (Translated v s a) = s
