@@ -56,7 +56,7 @@ instance (GLSpace s, NDims s ~ Three, Surface a) => Renderable (Spheroid s a) wh
                                            GL.NoTextureCoordinates 
                                            GL.Outside 
                                            GL.FillStyle) 
-                       $ GL.Sphere 1 10 10
+                       $ GL.Sphere 1 50 50
 
 instance (GLSpace s, NDims s ~ Three, Surface a, Renderable (r s a)) 
             => Renderable (Translated r s a) where
@@ -92,14 +92,14 @@ initGlScreen = do
   swapInterval $= 1
   GL.clearColor $= GL.Color4 0 0 0 0
   GL.clear [GL.ColorBuffer]
-  --lineSmooth $= Enabled
-  --polygonSmooth $= Enabled
-  --hint PolygonSmooth $= Nicest
-  --hint LineSmooth $= Nicest
-  --hint PointSmooth $= Nicest
-  --blend $= Enabled 
-    --cullFace $= Just Back
-  --blendFunc $= (SrcAlphaSaturate, One)
-  --multisample $= Enabled 
+  GL.lineSmooth $= GL.Enabled
+  GL.polygonSmooth $= GL.Enabled
+  GL.hint GL.PolygonSmooth $= GL.Nicest
+  GL.hint GL.LineSmooth $= GL.Nicest
+  GL.hint GL.PointSmooth $= GL.Nicest
+  GL.blend $= GL.Enabled 
+  GL.cullFace $= Just GL.Back
+  GL.blendFunc $= (GL.SrcAlphaSaturate, GL.One)
+  GL.multisample $= GL.Enabled 
   swapBuffers
 

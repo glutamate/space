@@ -31,7 +31,6 @@ sphere = Spheroid (1:::1.::1) red
 
 main = do
    initGlScreen
-   print box
    render box
    waitSecs 1 
    render $ Translated away box1
