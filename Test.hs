@@ -16,6 +16,7 @@ instance GLSpace LocustView where
 type instance NDims LocustView = Three
  
 red = (1,0,0)
+blue = (0,0,1)
 
 away = scalarMul (-10.0) uvz
 

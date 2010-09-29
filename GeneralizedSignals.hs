@@ -14,8 +14,8 @@ import Control.Monad.ST
 import Control.Monad
 import TNUtils
 import Dims
-import PlotGnuplot
-import Data.Ix
+--import PlotGnuplot 
+import Data.Ix 
 import Data.Complex
 import Numeric.FFT
 
@@ -25,6 +25,7 @@ newtype Length = Length Double deriving (Eq, Show, Num, Fractional, Floating, Di
 newtype SpaceFreq = SpaceFreq Double deriving (Eq, Show, Num, Fractional, Floating, Discretizable)
 
 class Discretizable a where
+--    type Discrete :: *
     discreteIndex ::  (a,a) -> a -> a -> Int
     discreteRange :: (a,a) -> a -> [a]
 
@@ -52,12 +53,29 @@ type family Volume a :: *
 type instance Volume Time = (Time,Time)
 type instance Volume Freq = (Freq,Freq)
 
-type family Inv a :: *
-type instance Inv Time = Freq
-type instance Inv Freq = Time
-type instance Inv Length = SpaceFreq
-type instance Inv SpaceFreq = Length
-type instance Inv (Vec n a) = Vec n (Inv a)
+class HasInverse a where
+      type Inv a :: *
+      invertValue :: a -> Inv a
+
+instance HasInverse Time where
+      type Inv Time = Freq
+      invertValue (Time t) = Freq $ recip t
+
+instance HasInverse Freq where
+      type Inv Freq = Time
+      invertValue (Freq t) = Time $ recip t
+
+instance HasInverse Length where
+      type Inv Length = SpaceFreq
+      invertValue (Length t) = SpaceFreq $ recip t
+
+instance HasInverse SpaceFreq where
+      type Inv SpaceFreq = Length
+      invertValue (SpaceFreq t) = Length $ recip t
+
+instance HasInverse a => HasInverse (Vec n a) where
+      type Inv (Vec n a) = Vec n (Inv a)
+      invertValue = fmap invertValue
 
 data Signal a b where
     Signal  :: (Discretizable a, {-Ix (Discretized a),-} Storable b) =>  
@@ -85,12 +103,16 @@ zipSignalsWith :: Storable c => (a -> b -> c) -> Signal i a -> Signal i b -> Sig
 zipSignalsWith f (Signal d1 lims1 invlims1 arr1) (Signal d2 lims2 invlims2 arr2)
                = Signal d1 lims1 invlims2 $ SV.zipWith f arr1 arr2
 
+--toCArray :: Signal a b -> CArray 
+
 class X a b where
-    transform :: Signal a b -> Signal (Inv a) b
+    fourier :: Signal a b -> Signal (Inv a) b
 
 instance X Time (Complex Double) where
-    transform (Signal d lims invlims arr) = Signal undefined invlims lims $ SV.pack $ fft $ SV.unpack arr
-    
+    fourier (Signal d lims invlims arr) = Signal (invertValue d) invlims lims $ SV.pack $ fft $ SV.unpack arr
+
+instance X Freq (Complex Double) where
+    fourier (Signal d lims invlims arr) = Signal (invertValue d) invlims lims $ SV.pack $ ifft $ SV.unpack arr
 
 instance (Storable (b,c), X a b, X a c) => X a (b,c) where
-    transform s = zipSignalsWith (,) (transform $ fmap fst s) (transform $ fmap snd s)
+    fourier s = zipSignalsWith (,) (fourier $ fmap fst s) (fourier $ fmap snd s)
