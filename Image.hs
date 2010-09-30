@@ -13,12 +13,14 @@ import Data.Bits
 import Foreign.Storable.Tuple
 
 data Image s a where
-     ImArray :: (Storable a, NDims s ~ n) => Vec n Int -> SV.Vector a -> Image s a
+     ImArray :: (Storable a) => Vec (NDims s) Int -> SV.Vector a -> Image s a
      ImFmap :: (a->b) -> Image s a -> Image s b
+     ImF :: (Vec (NDims s) Int -> b) -> Image s b
 
 at :: (NDims s ~ n) => Image s a -> Vec n Int -> a
 at (ImFmap f im) v = f $ im `at` v
 at (ImArray vsz arr) vix = arr `SV.index` vec2ImIx vix vsz -- (w*y+x)
+at (ImF f) v = f v
 
 -- this is probably wrong for 3D. Need to raise to power? better now?
 vec2ImIx :: Vec n Int -> Vec n Int -> Int 

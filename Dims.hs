@@ -4,6 +4,10 @@
 
 module Dims where
 
+import Data.Ix
+import Foreign.Storable
+import Foreign.Ptr
+
 data TTrue
 data TFalse
 
@@ -58,6 +62,45 @@ instance Functor (Vec n) where
     fmap f VNil = VNil
     fmap f (x:::vx) = (f x) ::: fmap f vx
 
+instance Ord a => Ord (Vec n a) where
+    (x ::: xs) <= (y ::: ys) = x <= y || xs <= ys
+    VNil <= VNil = True 
+    _ <= _ = undefined
+
+instance Ix a => Ix (Vec Z a) where
+    range (VNil, VNil) = [VNil]
+    range _ = []
+    inRange _ _ = True
+    index _ _ = 0
+
+instance (Ix a,Ix (Vec  n a))  => Ix (Vec (S n) a) where
+    range (x ::: xs, y ::: ys) = [ xys:::xsys | xsys <- range (xs, ys), xys <- range (x,y)] -- OK
+    range _ = []
+    inRange (x ::: xs, y ::: ys) (w:::ws) = inRange (x,y) w && inRange (xs,ys) ws -- OK
+    inRange _ _ = undefined
+    index (x ::: xs, y ::: ys) (w:::ws) = index (x,y) w + (index (x,y) y + 1) * index (xs,ys) ws -- OK
+    index _ _ = undefined
+
+instance Storable a => Storable (Vec Z a) where
+    sizeOf _ = 0
+    alignment = alignment  . velem
+    peek ptr = return VNil
+    poke ptr v = return ()
+
+instance (Storable a, Storable (Vec n a)) => Storable (Vec (S n) a) where
+    sizeOf (x:::xs) = sizeOf x + sizeOf xs
+    sizeOf _ = undefined
+    alignment = alignment  . velem
+    peek p = do 
+      let q = castPtr p
+      x <- peek q
+      xs <- peek (plusPtr p $ sizeOf x)
+      return (x ::: xs)
+    poke p (x:::xs) = do
+      poke (castPtr p) x
+      poke (plusPtr p $ sizeOf x) xs
+    poke p _ = undefined
+
 vop2 :: (a -> b -> c) -> Vec n a -> Vec n b -> Vec n c
 vop2 f VNil VNil = VNil
 vop2 f (x:::vx) (y:::vy) =  (f x y) ::: vop2 f vx vy
@@ -80,6 +123,19 @@ vsum = vfold (+) 0
 squarev :: (Num a) => Vec n a -> Vec n a
 squarev = fmap (\x->x*x)
 
+vdims :: TyInt n => Vec n a -> Int
+vdims v = toInt $ n v where
+    n :: Vec n a -> n
+    n = undefined
+
+vdims1 :: Vec n a -> Int
+vdims1 VNil = 0
+vdims1 (_ ::: vs) = 1+ vdims1 vs
+
+velem :: Vec n a -> a 
+velem = undefined
+
+
 instance Eq a => Eq (Vec n a) where
    VNil == VNil = True
    (x ::: vx) == (y ::: vy) = x==y && vx == vy
@@ -97,6 +153,12 @@ instance Num a => Num (Vec n a) where
    signum = fmap signum
    fromInteger i = error $ "fromInteger on vector" 
 
+instance Fractional a => Fractional (Vec n a) where
+   fromRational = error " fromRational on vector" 
+   vx / vy = vop2 (/) vx vy
+
+roundV :: Vec n Double ->  Vec n Int
+roundV = fmap round
 {-instance (Num a, Num (Vec n a)) => Num (Vec (S n) a) where
    vx + vy = vop2 (+) vx vy
    vx - vy = vop2 (-) vx vy
