@@ -7,6 +7,7 @@ import Space
 import Volume
 import Polygon
  
+import OpenGl
 import qualified Graphics.Rendering.OpenGL as GL 
 import Graphics.Rendering.OpenGL (($=))
 import Graphics.UI.GLFW -- hiding (Sink, get)

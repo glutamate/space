@@ -23,7 +23,7 @@ renderToImage x = do
   Size w h <- get windowSize
 
   allocaBytes (4*w*h) $ \colData -> do
-     readPixels (Position 0 0) (Size 1 1) (PixelData RGBA UnsignedByte colData)
+     readPixels (Position 0 0) (Size w h) (PixelData RGBA UnsignedByte colData)
      r <- peekElemOff colData 0
      g <- peekElemOff colData 1
      b <- peekElemOff colData 2

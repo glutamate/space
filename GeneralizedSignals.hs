@@ -15,7 +15,8 @@ import Data.List
 import Control.Monad.ST
 import Control.Monad
 import TNUtils
-import Dims
+import Vectors
+import Nats
 --import PlotGnuplot 
 import Data.Ix 
 import Data.Complex
@@ -23,8 +24,7 @@ import Numeric.FFT
 import Math.FFT
 import Data.Array.CArray
 import System.IO.Unsafe
-import Data.Ix.Shapable
-
+ 
 newtype Time = Time Double 
     deriving (Eq, Show, Num, Fractional, Floating, Discretizable, IsDouble)
 newtype Freq = Freq Double 
@@ -185,18 +185,8 @@ instance (TyInt n, X (Vec n Length) (Complex Double),
 --instance IsDouble d => Shapable (Vec Z d) where
 
 discreteLims :: IsDouble d => Signal (Vec n d) a -> (Vec n Int, Vec n Int)
-discreteLims s@(Signal d (lo,hi) invlims arr) = ( roundV $ fmap toDouble $ lo/d,  roundV $fmap toDouble$ hi/d)
-
-instance Shapable (Vec Z Int) where
-    sRank VNil = 0
-    sShape VNil VNil = []
-    sBounds [] = (VNil, VNil)
-
-instance Shapable (Vec n Int) => Shapable (Vec (S n) Int) where
-    sRank (x:::xs) = 1+sRank xs
-    sShape (x:::xs) (y:::ys) = rangeSize (x,y):sShape xs ys
-    sBounds (x:xs) = let (lo,hi) = sBounds xs
-                     in (0:::lo, (x-1):::hi)
+discreteLims s@(Signal d (lo,hi) invlims arr) 
+    = ( fmap (round . toDouble) $ lo/d,  fmap (round . toDouble) $ hi/d)
 
 
 instance (Storable (b,c), X a b, X a c) => X a (b,c) where

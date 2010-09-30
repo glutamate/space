@@ -2,47 +2,14 @@
 {-# OPTIONS_GHC -fglasgow-exts #-}
 {-# OPTIONS_GHC -fwarn-incomplete-patterns  #-}
 
-module Dims where
+module Vectors where
 
 import Data.Ix
 import Foreign.Storable
 import Foreign.Ptr
+import Nats
+import Data.Ix.Shapable
 
-data TTrue
-data TFalse
-
-data Z 
-
-newtype S a = S { unS :: a }
-
-type One = S Z
-type Two = S One
-type Three = S Two
-
-class TyInt a where
-    toInt :: a -> Int
-
-instance TyInt Z where
-    toInt _ = 0
-
-instance TyInt a => TyInt (S a) where
-    toInt = (1+) . toInt . unS
-
-type family Plus a b :: *
-
-type instance Plus a Z = a
-type instance Plus a (S b) = Plus (S a) b
-
-type family NDims s :: *
-
---class NDims s where
---   type ND s :: *
-
-data RealWorld
-type instance NDims RealWorld = Three
-
---instance NDims RealWorld where
---    type ND RealWorld = Three
 
 vecDims :: Vec n a -> Int
 vecDims (VNil) = 0
@@ -52,7 +19,6 @@ infixr 2 :::
 infixr 2 .::
 
 x .:: y = x ::: y :::VNil
-
 
 data Vec n a where
    VNil :: Vec Z a
@@ -123,7 +89,7 @@ vsum = vfold (+) 0
 squarev :: (Num a) => Vec n a -> Vec n a
 squarev = fmap (\x->x*x)
 
-vdims :: TyInt n => Vec n a -> Int
+vdims :: Nat n => Vec n a -> Int
 vdims v = toInt $ n v where
     n :: Vec n a -> n
     n = undefined
@@ -135,6 +101,48 @@ vdims1 (_ ::: vs) = 1+ vdims1 vs
 velem :: Vec n a -> a 
 velem = undefined
 
+--mkVec :: Nat n => a -> Vec n a
+--mkVec x = fmap (const x) undefinedVector
+       
+--mkVec1 :: n -> a -> Vec n a
+
+
+
+{-vapp :: Vec n a -> Vec m a -> Vec (Plus n m) a
+vapp VNil v = v
+vapp (x:::xs) v = x ::: vapp xs v 
+
+vsnoc ::  Nat n => Vec n a -> a -> Vec (S n) a
+vsnoc v x = v `vapp` (x ::: VNil )
+
+vrev :: Vec n a -> Vec n a
+vrev VNil = VNil
+vrev (x ::: xs) = vrev xs `vapp` (x ::: VNil ) -}
+
+class Nat n where
+    toInt :: n -> Int
+    mkVec:: a -> Vec n a
+    incVec :: Vec n Int
+
+instance Nat Z where
+    toInt _ = 0
+    mkVec _ = VNil
+    incVec = VNil
+
+instance Nat a => Nat (S a) where
+    toInt = (1+) . toInt . unS
+    mkVec x = x ::: mkVec x
+    incVec = v
+        where d = vdims v
+              v = d ::: incVec
+
+t :: Vec Three Int
+t = mkVec 1
+
+t1 :: Vec Three Int
+t1 = incVec
+
+--t2 = vapp t1 t1
 
 instance Eq a => Eq (Vec n a) where
    VNil == VNil = True
@@ -145,20 +153,18 @@ instance Show a => Show (Vec n a) where
    show VNil = "VNil"
    show (x :::vx) = show x ++":::"++show vx
 
-instance Num a => Num (Vec n a) where
+instance (Num a, Nat n) => Num (Vec n a) where
    vx + vy = vop2 (+) vx vy
    vx - vy = vop2 (-) vx vy
    vx * vy = vop2 (*) vx vy
    abs = fmap abs
    signum = fmap signum
-   fromInteger i = error $ "fromInteger on vector" 
+   fromInteger i = mkVec $ fromInteger i
 
-instance Fractional a => Fractional (Vec n a) where
-   fromRational = error " fromRational on vector" 
+instance (Fractional a, Nat n) => Fractional (Vec n a) where
+   fromRational = mkVec . fromRational
    vx / vy = vop2 (/) vx vy
 
-roundV :: Vec n Double ->  Vec n Int
-roundV = fmap round
 {-instance (Num a, Num (Vec n a)) => Num (Vec (S n) a) where
    vx + vy = vop2 (+) vx vy
    vx - vy = vop2 (-) vx vy
@@ -194,3 +200,16 @@ safevecIx :: Int -> Vec n a -> Maybe a
 safevecIx 0 (x:::_) = Just x
 safevecIx n (x:::xs) = safevecIx (n-1) xs
 safevecIx _ VNil = Nothing
+ 
+
+instance Shapable (Vec Z Int) where
+    sRank VNil = 0
+    sShape VNil VNil = []
+    sBounds [] = (VNil, VNil)
+
+instance Shapable (Vec n Int) => Shapable (Vec (S n) Int) where
+    sRank (x:::xs) = 1+sRank xs
+    sShape (x:::xs) (y:::ys) = rangeSize (x,y):sShape xs ys
+    sBounds (x:xs) = let (lo,hi) = sBounds xs
+                     in (0:::lo, (x-1):::hi)
+
