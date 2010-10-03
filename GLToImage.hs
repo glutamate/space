@@ -2,12 +2,13 @@
 {-# OPTIONS_GHC -fglasgow-exts #-}
 module GLToImage where
 
-import Dims
-import Space
-import Volume
-import Polygon
+import Nats
+import Vectors
+--import Volume
+--import Polygon
 import OpenGl
-import Image 
+--import Image 
+import GeneralizedSignals
 
 import Foreign (allocaBytes, Ptr )
 import Foreign.Storable
@@ -17,12 +18,12 @@ import Graphics.Rendering.OpenGL
 import Graphics.UI.GLFW -- hiding (Sink, get)
 import Control.Monad
 
-renderToImage :: (GLSpace s, NDims s ~ Three, NDims t ~ Two, HasSpace r, TheSpace r ~ s, Renderable r) 
-                 => r -> IO (Image t Colour)
+renderToImage :: (Renderable r) 
+                 => r -> IO (Signal (Vec Two Int) Colour)
 renderToImage x = do
   Size w h <- get windowSize
 
-  allocaBytes (4*w*h) $ \colData -> do
+  allocaBytes (realToFrac $ 4*w*h) $ \colData -> do
      readPixels (Position 0 0) (Size w h) (PixelData RGBA UnsignedByte colData)
      r <- peekElemOff colData 0
      g <- peekElemOff colData 1

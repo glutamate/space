@@ -2,17 +2,14 @@
 {-# OPTIONS_GHC -fglasgow-exts #-}
 module OpenGl where
 
-import Dims
-import Space
- 
+import Nats
+--import Space
+import VectorsL
+
 import qualified Graphics.Rendering.OpenGL as GL 
 import Graphics.Rendering.OpenGL (($=))
 import Graphics.UI.GLFW -- hiding (Sink, get)
 import Control.Monad
-
---it is not a good idea to give scene info statically.
-class GLSpace s where 
-     glsFrustrum :: s -> (Double,Double,Double,Double,Double, Double)
 
 data GLScene = GLScene {
      glFrustrum :: (Double,Double,Double,Double,Double, Double)
@@ -23,8 +20,9 @@ type Colour = (Double,Double,Double)
 toGLColour :: Colour -> GL.Color3 GL.GLfloat
 toGLColour (r,g,b) = GL.Color3 (realToFrac r) (realToFrac g) (realToFrac b)
  
-vertex3d :: (NDims s ~ Three) => Point s a -> GL.Vertex3 GL.GLfloat
-vertex3d (Point (x ::: y ::: z :::VNil) _) = GL.Vertex3 (realToFrac x) (realToFrac y) (realToFrac z)
+vertex3d :: Vec Three Double -> GL.Vertex3 GL.GLfloat
+vertex3d v = GL.Vertex3 (i 0) (i 1) (i 2)
+         where i n = realToFrac $ vecIx n v
 
 class Renderable r where
     renderIt :: r -> IO ()
@@ -34,18 +32,15 @@ class Surface a where
 instance Surface Colour where
       withSurface col ma = GL.color (toGLColour col) >> ma
 
-
 instance Renderable r => Renderable [r] where
     renderIt = mapM_ renderIt
 
-
- 
-render :: (GLSpace s, NDims s ~ Three, HasSpace r, TheSpace r ~ s, Renderable r) => r -> IO ()
-render x = do
+render :: (Renderable r) => GLScene -> r -> IO ()
+render (GLScene frust) x = do
  GL.clear [GL.ColorBuffer]
  GL.matrixMode $= GL.Projection
  GL.loadIdentity
- let (f0,f1,f2,f3,f4, f5) = glsFrustrum $ toSpace x
+ let (f0,f1,f2,f3,f4, f5) = frust
  GL.frustum f0 f1 f2 f3 f4 f5
  GL.matrixMode $= GL.Modelview 0
  GL.loadIdentity

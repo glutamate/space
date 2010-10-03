@@ -24,14 +24,11 @@ type family Plus a b :: *
 type instance Plus Z a = a
 type instance Plus (S b) a = S (Plus b a)
 
---type family NDims s :: *
+class Nat n where
+      toInt :: n -> Int
 
---class NDims s where
---   type ND s :: *
+instance Nat Z where
+         toInt _ = 0
 
---data RealWorld
---type instance NDims RealWorld = Three
-
---instance NDims RealWorld where
---    type ND RealWorld = Three
-
+instance Nat a => Nat (S a) where
+    toInt = (1+) . toInt . unS

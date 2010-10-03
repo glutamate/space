@@ -2,7 +2,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {- OPTIONS_GHC -fwarn-incomplete-patterns -}
 
-module GeneralizedSignal where
+module GeneralizedSignals where
 
 --import 
 import qualified Data.StorableVector as SV
@@ -15,12 +15,12 @@ import Data.List
 import Control.Monad.ST
 import Control.Monad
 import TNUtils
-import Vectors
+import VectorsL
 import Nats
 --import PlotGnuplot 
 import Data.Ix 
 import Data.Complex
-import Numeric.FFT
+import Numeric.FFT 
 import Math.FFT
 import Data.Array.CArray
 import System.IO.Unsafe
@@ -57,15 +57,17 @@ instance Discretizable Int where
 
 instance Discretizable a => Discretizable (Vec Z a) where
     discreteIndex (lo,hi) dx x = 0
-    discreteRange (lo,hi) dx = [VNil]
+    discreteRange (lo,hi) dx = [vnil]
 
 instance (Discretizable a, Discretizable (Vec n a)) => Discretizable (Vec (S n) a) where
-    discreteIndex (x ::: xs, y ::: ys) (dx:::dxs) (w:::ws) 
-        = discreteIndex (x,y) dx w + (discreteIndex (x,y) dx y + 1) * discreteIndex (xs,ys) dxs ws
-    discreteRange (x ::: xs, y ::: ys) (dx:::dxs) 
-        = [ xys:::xsys | xsys <- discreteRange (xs, ys) dxs, 
-                         xys <- discreteRange (x,y) dx]
-
+    discreteIndex (vx, vy) (vd) (vw) 
+        = discreteIndex (vcar vx,vcar vy) (vcar vd) (vcar vw) + 
+         (discreteIndex (vcar vx,vcar vy) (vcar vd) (vcar vy) + 1) * 
+         discreteIndex (vcdr vx,vcdr vy) (vcdr vd) (vcdr vw)
+    discreteRange (vx, vy) vd 
+        = [ vcons xys vxsys | vxsys <- discreteRange (vcdr vx, vcdr vy) (vcdr vd),
+                              xys <- discreteRange (vcar vx,vcar vy) (vcar vd)]
+ 
 type family Volume a :: *
 type instance Volume Time = (Time,Time)
 type instance Volume Freq = (Freq,Freq)
@@ -129,7 +131,8 @@ sOfVToVofS :: Signal a (Vec n b) -> Vec n (Signal a b)
 sOfVToVofS s = undefined
 
 vOfSToSofV :: Vec n (Signal a b) -> Signal a (Vec n b) 
-vOfSToSofV s = undefined
+vOfSToSofV voss = let sigs = vecToList voss
+                  in undefined
 
 
 type Events a b = [(a,b)]
@@ -167,11 +170,11 @@ instance X SpaceFreq (Complex Double) where
 --instance X (Vec Z Length) (Complex Double) where
 --    fourier = undefined
  
-instance (TyInt n, X (Vec n Length) (Complex Double), 
+instance (Nat n, X (Vec n Length) (Complex Double), 
           Discretizable (Vec n SpaceFreq), Ix (Vec n Int), Shapable (Vec n Int)) 
     => X (Vec n Length) (Complex Double) where
     fourier s@(Signal d lims invlims arr) = 
-        let ixdims :: TyInt n => Signal (Vec n a) b -> n
+        let ixdims :: Nat n => Signal (Vec n a) b -> n
             ixdims = undefined
             dims = toInt $ ixdims s
             (oldp, oldn, oldsomething) = SVB.toForeignPtr arr
@@ -184,7 +187,7 @@ instance (TyInt n, X (Vec n Length) (Complex Double),
     
 --instance IsDouble d => Shapable (Vec Z d) where
 
-discreteLims :: IsDouble d => Signal (Vec n d) a -> (Vec n Int, Vec n Int)
+discreteLims :: (Nat n, IsDouble d) => Signal (Vec n d) a -> (Vec n Int, Vec n Int)
 discreteLims s@(Signal d (lo,hi) invlims arr) 
     = ( fmap (round . toDouble) $ lo/d,  fmap (round . toDouble) $ hi/d)
 

@@ -101,40 +101,62 @@ vdims1 (_ ::: vs) = 1+ vdims1 vs
 velem :: Vec n a -> a 
 velem = undefined
 
---mkVec :: Nat n => a -> Vec n a
---mkVec x = fmap (const x) undefinedVector
-       
---mkVec1 :: n -> a -> Vec n a
 
-
-
-{-vapp :: Vec n a -> Vec m a -> Vec (Plus n m) a
+vapp :: Vec n a -> Vec m a -> Vec (Plus n m) a
 vapp VNil v = v
 vapp (x:::xs) v = x ::: vapp xs v 
 
-vsnoc ::  Nat n => Vec n a -> a -> Vec (S n) a
-vsnoc v x = v `vapp` (x ::: VNil )
+--vsnoc ::  Nat n => Vec n a -> a -> Vec (S n) a
+--vsnoc v x = v `vapp` (x ::: VNil )
 
-vrev :: Vec n a -> Vec n a
+{-vrev :: Vec n a -> Vec n a
 vrev VNil = VNil
 vrev (x ::: xs) = vrev xs `vapp` (x ::: VNil ) -}
 
 class Nat n where
     toInt :: n -> Int
-    mkVec:: a -> Vec n a
-    incVec :: Vec n Int
+    natCase :: NatCase g => g n
+
+class NatCase g where
+    caseZero :: g Z
+    caseSucc :: Nat n => g (S n)
+--    mkVec:: a -> Vec n a
+ --   incVec :: Vec n Int
 
 instance Nat Z where
     toInt _ = 0
-    mkVec _ = VNil
-    incVec = VNil
+    natCase = caseZero
+--    mkVec _ = VNil
+--    incVec = VNil
 
 instance Nat a => Nat (S a) where
     toInt = (1+) . toInt . unS
-    mkVec x = x ::: mkVec x
+    natCase = caseSucc
+{-    mkVec x = x ::: mkVec x
     incVec = v
         where d = vdims v
-              v = d ::: incVec
+              v = d ::: incVec -}
+
+newtype MkVec a n = MkVec {runMkVec :: a -> Vec n a }
+
+instance NatCase (MkVec a) where
+         caseZero = MkVec $ \x-> VNil
+         caseSucc = MkVec $ \x -> x:::mkVec x
+
+mkVec :: Nat n => a-> Vec n a
+mkVec = runMkVec natCase
+
+newtype IncVec n = IncVec {runIncVec :: Vec n Int }
+
+instance NatCase (IncVec) where
+         caseZero = IncVec VNil
+         caseSucc = IncVec v
+                 where d = vdims v
+                       v = d ::: incVec 
+
+incVec :: Nat n => Vec n Int
+incVec = runIncVec natCase
+
 
 t :: Vec Three Int
 t = mkVec 1
@@ -142,7 +164,7 @@ t = mkVec 1
 t1 :: Vec Three Int
 t1 = incVec
 
---t2 = vapp t1 t1
+t2 = vapp t1 t
 
 instance Eq a => Eq (Vec n a) where
    VNil == VNil = True

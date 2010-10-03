@@ -6,21 +6,25 @@ module Image where
 
 import qualified Data.StorableVector  as SV
 import Foreign.Storable
-import Dims 
+import Nats 
 import qualified Graphics.GD.ByteString as GD
 import Control.Monad
-import Data.Bits
+import Data.Bits 
 import Foreign.Storable.Tuple
+import GeneralizedSignals
 
-data Image s a where
+{-data Image s a where
      ImArray :: (Storable a) => Vec (NDims s) Int -> SV.Vector a -> Image s a
      ImFmap :: (a->b) -> Image s a -> Image s b
      ImF :: (Vec (NDims s) Int -> b) -> Image s b
+-}
 
-at :: (NDims s ~ n) => Image s a -> Vec n Int -> a
+type Image n a = Signal (Vec n Int) a
+
+{-at :: (NDims s ~ n) => Image s a -> Vec n Int -> a
 at (ImFmap f im) v = f $ im `at` v
 at (ImArray vsz arr) vix = arr `SV.index` vec2ImIx vix vsz -- (w*y+x)
-at (ImF f) v = f v
+at (ImF f) v = f v 
 
 -- this is probably wrong for 3D. Need to raise to power? better now?
 vec2ImIx :: Vec n Int -> Vec n Int -> Int 
@@ -48,11 +52,11 @@ fillImage' vsz f = ImArray vsz $ fst $ SV.unfoldrN (vec2ImIx vsz vsz) (unf vsz) 
                     | y < (h-1) = Just (f 0 (y+1), (1, y+1))
                    | otherwise = Nothing-}
 
-
-fillImageLists :: (Storable a, NDims s ~ Two) => Int -> Int -> [[a]] -> Image s a
+-}
+fillImageLists :: (Storable a) => Int -> Int -> [[a]] -> Image Two a
 fillImageLists w h lsts = ImArray ( w .:: h ) $ SV.concat $ map SV.pack lsts 
 
-loadPNG :: (NDims s~ Two) => FilePath -> IO (Image s (Int,Int,Int))
+loadPNG :: FilePath -> IO (Image Two (Int,Int,Int))
 loadPNG fp = do
   gdim <- GD.loadPngFile fp
   (w,h) <- GD.imageSize gdim
@@ -83,13 +87,7 @@ c 0 = (255,0,0)
 c 1 = (0,255,0)
 c 2 = (0,0,255)
 c _ = (100,100,100)
-data Flatland
-type instance NDims Flatland = Two
 
-type Id a = a -> a
-
-in2d :: Id (Image Flatland s)
-in2d = id
 
 showBits :: Bits a => a -> String
 showBits x = let nbs = bitSize x
