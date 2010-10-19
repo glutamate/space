@@ -40,4 +40,5 @@ main = do
    waitSecs 1
    im<- renderToImage locustScene $ Translated away sphere
    savePNG "test4.png" $ fmap intColToGlCol im
-   
+   t1
+   t3

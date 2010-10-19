@@ -129,13 +129,13 @@ velem :: Vec n a -> a
 velem = undefined
 
 
-t :: Vec Three Int
-t = mkVec 1
+--t :: Vec Three Int
+--t = mkVec 1
 
-t1 :: Vec Three Int
-t1 = incVec
+--t1 :: Vec Three Int
+--t1 = incVec
 
-t2 = vapp t1 t
+--t2 = vapp t1 t
 
 instance Eq a => Eq (Vec n a) where
    vx == vy = vecToList vx == vecToList vy
