@@ -53,13 +53,13 @@ render (GLScene frust bgcol) x = do
  GL.loadIdentity
  renderIt x
  --threadDelay $ 300*1000
- swapBuffers 
+-- swapBuffers 
          
 initGlScreen = do
   initialize
   --when ("-aa" `elem` args) $ do
   --openWindowHint $= (FSAASamples, 1)
-  openWindow (GL.Size 640 480) [
+  openWindow (GL.Size 200 200) [
                   DisplayRGBBits 8 8 8,
                   DisplayAlphaBits 8,
                   DisplayDepthBits 24,

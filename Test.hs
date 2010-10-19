@@ -3,38 +3,41 @@ module Main where
 
 import Space
 import OpenGl
-import Dims
+import Nats
 import TNUtils
 import Polygon
 import Volume 
+import VectorsL
+import GlRender
+import GLToImage
+import Image
 
-data LocustView
+locustScene = GLScene (-0.2, 0.2, -0.15, 0.15, 0.163, 100.0) (0,0,0)
 
-instance GLSpace LocustView where
-     glsFrustrum _ =  (-0.2, 0.2, -0.15, 0.15, 0.163, 100.0)
-
-type instance NDims LocustView = Three
  
 red = (1,0,0)
 blue = (0,0,1)
 
 away = scalarMul (-10.0) uvz
 
-box :: [Polygon LocustView Colour]
+box :: [Polygon Three Colour]
 box = translates away $ tags red $ unitBox3
 
-box1 :: Cuboid LocustView Colour
-box1 = Cuboid (1:::1.::1) red
+box1 :: Cuboid Three Colour
+box1 = Cuboid 1 red
 
-sphere :: Spheroid LocustView Colour
-sphere = Spheroid (1:::1.::1) red
+sphere :: Spheroid Three Colour
+sphere = Spheroid 1 red
 
 
 main = do
    initGlScreen
-   render box
+   render locustScene box
    waitSecs 1 
-   render $ Translated away box1
+   render locustScene $ Translated away box1
    waitSecs 1
-   render $ Translated away sphere
+   render locustScene $ Translated away sphere
    waitSecs 1
+   im<- renderToImage locustScene $ Translated away sphere
+   savePNG "test4.png" $ fmap intColToGlCol im
+   

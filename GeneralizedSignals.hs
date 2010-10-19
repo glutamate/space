@@ -127,6 +127,10 @@ data Signal a b where
     SigFmap :: (b->b') -> Signal a b -> Signal a b'
     SigFun  :: (a->b) -> Signal a b
 
+sigLims :: Signal a b -> (a,a)
+sigLims (Signal d1 lims1 invlims1 arr1) = lims1
+sigLims (SigFmap _ s) = sigLims s
+
 instance Functor (Signal a) where
     fmap f (SigFmap g s) = SigFmap (f . g) s
     fmap f s = SigFmap f s

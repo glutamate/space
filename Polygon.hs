@@ -10,7 +10,7 @@ import Space
 data Polygon n a where 
      Poly :: [Vec n Double] -> a -> Polygon n a 
 
-instance Functor (Polygon s) where 
+instance Functor (Polygon n) where 
     fmap f (Poly pts x) = Poly pts $ f x
  
   

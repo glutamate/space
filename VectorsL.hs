@@ -42,6 +42,8 @@ vnil = V []
 vecIx :: Int -> Vec n a -> a
 vecIx n (V xs) = xs !!n
 
+v ! i = vecIx i v
+
 vecToList :: Vec n a -> [a]
 vecToList (V xs) = xs
 

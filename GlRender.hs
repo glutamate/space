@@ -14,8 +14,6 @@ import Graphics.Rendering.OpenGL (($=))
 import Graphics.UI.GLFW -- hiding (Sink, get)
 import Control.Monad
  
-v ! i = vecIx i v
-
 instance Surface a => Renderable (Polygon Three a) where
     renderIt (Poly pts col) = withSurface col $ do
          GL.renderPrimitive GL.Polygon $ forM_ pts $ GL.vertex . vertex3d 
@@ -27,18 +25,24 @@ instance Surface a => Renderable (Cuboid Three a) where
 
 instance Surface a => Renderable (Spheroid Three a) where
     renderIt (Spheroid v col) = GL.preservingMatrix $ withSurface col $ do
-         GL.scale (v!0) (v!1) (v!2)
+         GL.scale (glf $ v!0) 
+                  (glf $ v!1) 
+                  (glf $ v!2)
          GL.renderQuadric (GL.QuadricStyle Nothing 
                                            GL.NoTextureCoordinates 
                                            GL.Outside 
                                            GL.FillStyle) 
                        $ GL.Sphere 1 50 50
                        
+glf :: Double -> GL.GLfloat
+glf=realToFrac
 
 instance (Surface a, Renderable (r Three a)) 
             => Renderable (Translated r Three a) where
     renderIt (Translated v vol) = GL.preservingMatrix $ do
-         GL.translate $ GL.Vector3 (v!0) (v!1) (v!2) 
+         GL.translate $ GL.Vector3 (glf $ v!0) 
+                                   (glf $ v!1) 
+                                   (glf $ v!2)
          renderIt vol
 
 

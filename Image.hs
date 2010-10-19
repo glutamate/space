@@ -12,6 +12,7 @@ import Control.Monad
 import Data.Bits 
 import Foreign.Storable.Tuple
 import GeneralizedSignals
+import VectorsL
 
 {-data Image s a where
      ImArray :: (Storable a) => Vec (NDims s) Int -> SV.Vector a -> Image s a
@@ -53,35 +54,45 @@ fillImage' vsz f = ImArray vsz $ fst $ SV.unfoldrN (vec2ImIx vsz vsz) (unf vsz) 
                    | otherwise = Nothing-}
 
 -}
-fillImageLists :: (Storable a) => Int -> Int -> [[a]] -> Image Two a
-fillImageLists w h lsts = ImArray ( w .:: h ) $ SV.concat $ map SV.pack lsts 
+{-fillImageLists :: (Storable a) => 
+                  Int -> Int -> [[a]] -> Image Two a
+fillImageLists w h lsts = 
+     ImArray ( w .::  $ SV.concat $ map SV.pack lsts -}
 
 loadPNG :: FilePath -> IO (Image Two (Int,Int,Int))
 loadPNG fp = do
   gdim <- GD.loadPngFile fp
   (w,h) <- GD.imageSize gdim
-  pts <- forM [0..w-1] $ \x-> forM [0..h-1] $ \y-> toColour `fmap` GD.getPixel (x,y) gdim
-  return $ fillImageLists w h $ pts
+  let lims = (0, w `vcons` h `vcons` vnil)
+  let mf v = toColour `fmap` GD.getPixel (v!0, v!1) gdim
+  fillIO 1 lims lims mf
+         
+         
 
-savePNG :: (NDims s ~ Two) => FilePath -> Image s (Int,Int,Int) -> IO ()
+--  pts <- forM [0..w-1] $ \x-> forM [0..h-1] $ \y-> toColour `fmap` GD.getPixel (x,y) gdim
+--  return $ fillImageLists w h $ pts
+
+savePNG :: FilePath -> Image Two (Int,Int,Int) -> IO ()
 savePNG fp img = do
-  ((w ::: h::: VNil)::Vec Two Int) <- return $ imageSize img
-  print (w,h)
+  let (_,v) = sigLims img
+  let (w,h) = ((v!0)+1,(v!1)+1)
   gdIm <- GD.newImage (w,h)
   forM_ [0..w-1] $ \x-> 
         forM_ [0..h-1] $ \y-> do
-            let (r,g,b) = img `at` (x .:: y)            
+            let (r,g,b) = img `at` (x `vcons` y`vcons`vnil)            
             GD.setPixel (x,y) (GD.rgb r g b) gdIm 
   GD.savePngFile fp gdIm
 
-ti = do in2d `fmap` loadPNG "test.png"
+ti = do loadPNG "test.png"
         return ()
 tst = [x+y*10 | x<- [0..9], y <- [0..9]]
 
-t2 = vec2ImIx (90.::99) (100.::100)
+--t2 = vec2ImIx (90.::99) (100.::100)
 
-t1 = savePNG "test1.png" $ in2d $ fillImage 50 50 $ \x y -> c ((x+y) `mod` 3)
-t3 = savePNG "test3.png" $ in2d $ fillImage 255 255 $ \x y -> (x, 0, y)
+t1 = savePNG "test1.png" $ 
+     fill 1 (0,49) (0,49) $ \v -> c (((v!0)+(v!1)) `mod` 3)
+t3 = savePNG "test3.png" $ 
+     fill 1 (0,254) (0,254) $ \v -> (v!0, 0, v!1)
 
 c 0 = (255,0,0)
 c 1 = (0,255,0)
@@ -95,9 +106,13 @@ showBits x = let nbs = bitSize x
                  s False = "0"
              in concatMap (s . testBit x) [0..nbs]
 
-red x =fromIntegral $ (x .&. (GD.rgb 255 0 0)) `shiftR` 16
-green x =fromIntegral $  (x .&. (GD.rgb 0 255 0)) `shiftR` 8
-blue x =fromIntegral $ (x .&. (GD.rgb 0 0 255))
-
 toColour :: GD.Color -> (Int, Int, Int) 
-toColour c = (red c, green c, blue c)
+toColour c = (red c, green c, blue c) where
+  red x =fromIntegral $ (x .&. (GD.rgb 255 0 0)) `shiftR` 16
+  green x =fromIntegral $  (x .&. (GD.rgb 0 255 0)) `shiftR` 8
+  blue x =fromIntegral $ (x .&. (GD.rgb 0 0 255))
+
+intColToGlCol :: (Double, Double, Double) ->
+                 (Int, Int, Int) 
+intColToGlCol (r, g, b) = (f r, f g, f b) where
+   f int = round $  int * 255
