@@ -53,7 +53,7 @@ render (GLScene frust bgcol) x = do
  GL.loadIdentity
  renderIt x
  --threadDelay $ 300*1000
--- swapBuffers 
+ swapBuffers 
          
 initGlScreen = do
   initialize
