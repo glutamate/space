@@ -97,6 +97,10 @@ class HasInverse a where
       type Inv a :: *
       invertValue :: a -> Inv a
 
+instance HasInverse Int where
+      type Inv Int = Int
+      invertValue = negate -- haha. FIXME
+
 instance HasInverse Time where
       type Inv Time = Freq
       invertValue (Time t) = Freq $ recip t
@@ -143,8 +147,17 @@ at (Signal delta lims _ arr) x =  arr `SV.index` (discreteIndex lims delta x)
 at (SigFmap f s) x = f $ s `at` x
 at (SigFun f) x = f x
 
-fill :: (Discretizable a, Storable b) => a -> (a,a) -> (Inv a, Inv a) -> (a->b) -> Signal a b
-fill delta lims invlims f = Signal delta lims invlims $ SV.pack $ map f $ discreteRange lims delta
+fill :: (Discretizable a, Storable b) => 
+        a -> (a,a) -> (Inv a, Inv a) -> (a->b) -> Signal a b
+fill delta lims invlims f = 
+     Signal delta lims invlims $ SV.pack $ map f $ discreteRange lims delta
+
+fillIO :: (Discretizable a, Storable b) => 
+          a -> (a,a) -> (Inv a, Inv a) -> (a->IO b) -> IO (Signal a b)
+fillIO delta lims invlims mf = do
+       xs <- mapM mf $ discreteRange lims delta
+       return $ Signal delta lims invlims $ SV.pack xs 
+
 
 zipSignalsWith :: Storable c => (a -> b -> c) -> Signal i a -> Signal i b -> Signal i c
 zipSignalsWith f (Signal d1 lims1 invlims1 arr1) (Signal d2 lims2 invlims2 arr2)

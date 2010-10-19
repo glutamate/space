@@ -12,7 +12,8 @@ import Graphics.UI.GLFW -- hiding (Sink, get)
 import Control.Monad
 
 data GLScene = GLScene {
-     glFrustrum :: (Double,Double,Double,Double,Double, Double)
+     glFrustrum :: (Double,Double,Double,Double,Double, Double),
+     glBgColour :: (Int,Int,Int) 
 }
 
 type Colour = (Double,Double,Double)
@@ -36,12 +37,18 @@ instance Renderable r => Renderable [r] where
     renderIt = mapM_ renderIt
 
 render :: (Renderable r) => GLScene -> r -> IO ()
-render (GLScene frust) x = do
+render (GLScene frust bgcol) x = do
+ GL.clearColor $= GL.Color4 0 0 0 0
  GL.clear [GL.ColorBuffer]
  GL.matrixMode $= GL.Projection
  GL.loadIdentity
  let (f0,f1,f2,f3,f4, f5) = frust
- GL.frustum f0 f1 f2 f3 f4 f5
+ GL.frustum (realToFrac f0) 
+            (realToFrac f1) 
+            (realToFrac f2) 
+            (realToFrac f3) 
+            (realToFrac f4)
+            (realToFrac f5)
  GL.matrixMode $= GL.Modelview 0
  GL.loadIdentity
  renderIt x
