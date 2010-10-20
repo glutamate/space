@@ -23,7 +23,7 @@ loadPNG fp = do
   (w,h) <- GD.imageSize gdim
   let lims = (0, w `vcons` h `vcons` vnil)
   let mf v = toColour `fmap` GD.getPixel (v!0, v!1) gdim
-  fillM 1 lims lims mf
+  fillIO 1 lims lims mf
          
 
 savePNG :: FilePath -> Image Two (Int,Int,Int) -> IO ()

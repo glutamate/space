@@ -203,14 +203,20 @@ fill :: (Discretizable a, Storable b) =>
 fill delta lims invlims f = 
      Signal delta lims invlims $ SV.pack $ map f $ discreteRange lims delta
 
-fillM :: (Discretizable a, Storable b, Monad m) => 
-          a -> (a,a) -> (Inv a, Inv a) -> (a->m b) -> m (Signal a b)
-fillM delta lims invlims mf = do
+fillIO :: (Discretizable a, Storable b, Show a) => 
+          a -> (a,a) -> (Inv a, Inv a) -> (a->IO b) -> IO (Signal a b)
+fillIO delta lims invlims mf = do
   let rng = discreteRange lims delta
   let n = discreteRngLength lims delta
-  xs <- mapM mf $ rng
-  return $ Signal delta lims invlims $ SV.pack xs 
-
+  print n
+  stv <- stToIO $ SVST.new_ (n+1800)
+  let f ixv nix = do v <- mf ixv
+                     --print (ixv, nix)
+                     stToIO $ SVST.write stv nix v
+                     return $ nix+1
+  _ <- foldRangeM lims delta 0 f
+  sv <- stToIO $ SVST.unsafeFreeze stv
+  return $ Signal delta lims invlims sv
 
 zipSignalsWith :: Storable c => (a -> b -> c) -> Signal i a -> Signal i b -> Signal i c
 zipSignalsWith f (Signal d1 lims1 invlims1 arr1) (Signal d2 lims2 invlims2 arr2)

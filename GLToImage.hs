@@ -28,24 +28,17 @@ renderToImage gls r = do
   Size w h <- get windowSize
   print (w,h)
   render gls r
-  allocaBytes (szToInt $ 4*w*h) $ \colData -> do
-     readPixels (Position 0 0) (Size w h) (PixelData RGBA UnsignedByte colData)
+  allocaBytes (szToInt $ 3*w*h) $ \colData -> do
+     readPixels (Position 0 0) (Size w h) (PixelData RGB UnsignedByte colData)
+     let c b = realToFrac b/255
      let mf v = do
-         let pixn = 4*((v!0)+(v!1)*(szToInt w)) 
+         let pixn = 3*((v!0)+(v!1)*(szToInt w)) 
 --         print (v,pixn)
          r::Word8 <- peekElemOff colData pixn
          g <- peekElemOff colData $ pixn+1
          b <- peekElemOff colData $ pixn+2     
-         return (realToFrac r, realToFrac g, realToFrac b)
+         return (c r, c g, c b)
      let delta = 1
-         lims  = (0, szToInt w `vcons` szToInt h `vcons` vnil)
+         lims  = (0, szToInt (w-1) `vcons` szToInt (h-1) `vcons` vnil)
      fillIO delta lims lims mf  
 
-
- 
-{-      let pixelData fmt = PixelData fmt Float depthImage :: PixelData GLfloat
-      readPixels (Position 0 0) shadowMapSize' (pixelData DepthComponent)
-      (_, Size viewPortWidth _) <- get viewport
-      windowPos (Vertex2 (fromIntegral viewPortWidth / 2 :: GLfloat) 0)
-      drawPixels shadowMapSize' (pixelData Luminance)
-      swapBuffers -}
