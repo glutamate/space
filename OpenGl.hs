@@ -37,8 +37,8 @@ instance Renderable r => Renderable [r] where
     renderIt = mapM_ renderIt
 
 render :: (Renderable r) => GLScene -> r -> IO ()
-render (GLScene frust bgcol) x = do
- GL.clearColor $= GL.Color4 0 0 0 0
+render (GLScene frust (r,g,b)) x = do
+ GL.clearColor $= GL.Color4 (fromIntegral r) (fromIntegral g) (fromIntegral b) 0
  GL.clear [GL.ColorBuffer]
  GL.matrixMode $= GL.Projection
  GL.loadIdentity

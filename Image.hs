@@ -4,7 +4,6 @@
 
 module Image where
 
-import qualified Data.StorableVector  as SV
 import Foreign.Storable
 import Nats 
 import qualified Graphics.GD.ByteString as GD
@@ -14,50 +13,9 @@ import Foreign.Storable.Tuple
 import GeneralizedSignals
 import VectorsL
 
-{-data Image s a where
-     ImArray :: (Storable a) => Vec (NDims s) Int -> SV.Vector a -> Image s a
-     ImFmap :: (a->b) -> Image s a -> Image s b
-     ImF :: (Vec (NDims s) Int -> b) -> Image s b
--}
 
 type Image n a = Signal (Vec n Int) a
 
-{-at :: (NDims s ~ n) => Image s a -> Vec n Int -> a
-at (ImFmap f im) v = f $ im `at` v
-at (ImArray vsz arr) vix = arr `SV.index` vec2ImIx vix vsz -- (w*y+x)
-at (ImF f) v = f v 
-
--- this is probably wrong for 3D. Need to raise to power? better now?
-vec2ImIx :: Vec n Int -> Vec n Int -> Int 
-vec2ImIx VNil _ = 0
-vec2ImIx (x:::vix) (w :::vsz) = x+w*vec2ImIx vix vsz 
-vec2ImIx _ _ = error "vec2ImIx"
-
-imageSize :: (NDims s ~ n) => Image s a -> Vec n Int
-imageSize (ImFmap _ im) = imageSize im
-imageSize (ImArray vsz _) = vsz
-
---unfoldrN :: Storable b => Int -> (a -> Maybe (b, a)) -> a -> (Vector b, Maybe a)	Source
-fillImage :: (Storable a, NDims s ~ Two) => Int -> Int -> (Int -> Int -> a) -> Image s a
-fillImage w h f = ImArray (w .:: h) $ fst $ SV.unfoldrN (w*h) unf (0,0) 
-   where unf (x,y) | x < w = Just (f x y, (x+1, y))
-                   | y < (h-1) = Just (f 0 (y+1), (1, y+1))
-                   | otherwise = Nothing
-
-fillImage':: forall b s n. (Storable b, NDims s ~ n) => Vec n Int -> (Vec n Int -> b) -> Image s b
-fillImage' vsz f = ImArray vsz $ fst $ SV.unfoldrN (vec2ImIx vsz vsz) (unf vsz) (fmap (const 0) vsz)
-   where unf :: Vec n Int -> Vec n Int -> Maybe (b, Vec n Int)
-         --unf _ VNil = Nothing
-         unf (w:::vsz) vix@(x:::vix') | x < w = Just (f vix, (x+1):::vix') {- | x < w = Just (f x y, (x+1, y))
-                                      
-                    | y < (h-1) = Just (f 0 (y+1), (1, y+1))
-                   | otherwise = Nothing-}
-
--}
-{-fillImageLists :: (Storable a) => 
-                  Int -> Int -> [[a]] -> Image Two a
-fillImageLists w h lsts = 
-     ImArray ( w .::  $ SV.concat $ map SV.pack lsts -}
 
 loadPNG :: FilePath -> IO (Image Two (Int,Int,Int))
 loadPNG fp = do
@@ -65,12 +23,8 @@ loadPNG fp = do
   (w,h) <- GD.imageSize gdim
   let lims = (0, w `vcons` h `vcons` vnil)
   let mf v = toColour `fmap` GD.getPixel (v!0, v!1) gdim
-  fillIO 1 lims lims mf
+  fillM 1 lims lims mf
          
-         
-
---  pts <- forM [0..w-1] $ \x-> forM [0..h-1] $ \y-> toColour `fmap` GD.getPixel (x,y) gdim
---  return $ fillImageLists w h $ pts
 
 savePNG :: FilePath -> Image Two (Int,Int,Int) -> IO ()
 savePNG fp img = do

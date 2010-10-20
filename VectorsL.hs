@@ -19,10 +19,6 @@ instance Functor (Vec n) where
 instance Ord a => Ord (Vec n a) where
     V xs <= V ys = xs <= ys
 
-instance Ix a => Ix (Vec Z a) where
-    range (_, _) = [V []]
-    inRange _ _ = True
-    index _ _ = 0
 
 vcdr :: Vec (S n) a -> Vec n a
 vcdr (V xs) = V $ tail xs
@@ -72,6 +68,11 @@ incVec :: Nat n => Vec n Int
 incVec = v
       where n = vdims v
             v = V $ take n [1..]
+
+instance Ix a => Ix (Vec Z a) where
+    range (_, _) = [V []]
+    inRange _ _ = True
+    index _ _ = 0
 
 
 instance (Ix a,Ix (Vec  n a))  => Ix (Vec (S n) a) where
