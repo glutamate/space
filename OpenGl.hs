@@ -5,6 +5,7 @@ module OpenGl where
 import Nats
 --import Space
 import VectorsL
+import Data.Word
 
 import qualified Graphics.Rendering.OpenGL as GL 
 import Graphics.Rendering.OpenGL (($=))
@@ -16,10 +17,10 @@ data GLScene = GLScene {
      glBgColour :: (Int,Int,Int) 
 }
 
-type Colour = (Double,Double,Double)
+type Colour = (Word8,Word8,Word8)
 
-toGLColour :: Colour -> GL.Color3 GL.GLfloat
-toGLColour (r,g,b) = GL.Color3 (realToFrac r) (realToFrac g) (realToFrac b)
+toGLColour :: Colour -> GL.Color3 GL.GLubyte
+toGLColour (r,g,b) = GL.Color3 (fromIntegral r) (fromIntegral g) (fromIntegral b)
  
 vertex3d :: Vec Three Double -> GL.Vertex3 GL.GLfloat
 vertex3d v = GL.Vertex3 (i 0) (i 1) (i 2)

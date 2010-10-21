@@ -1,0 +1,14 @@
+Name:                space
+Version:             0.1
+Description:         Space -- the final frontier
+License:             BSD3
+License-file:        LICENSE
+Author:              Tom Nielsen
+Maintainer:          tanielsen@gmail.com
+build-type:          Simple
+Exposed-modules:     Nats,VectorsL, OpenGl, Polygon, Space, GLToImage,Image
+
+			
+Build-depends:       base>=4, fft, pure-fft, GLFW>0.3, OpenGL>=2.4, 
+		     storablevector>0.2.4, ix-shapable, carray, tnutils,
+		     storable-tuple, gd>=0.3000.5
