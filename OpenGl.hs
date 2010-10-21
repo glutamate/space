@@ -60,14 +60,14 @@ initGlScreen = do
   initialize
   --when ("-aa" `elem` args) $ do
   --openWindowHint $= (FSAASamples, 1)
-  openWindow (GL.Size 200 200) [
+  openWindow (GL.Size 640 480) [
                   DisplayRGBBits 8 8 8,
                   DisplayAlphaBits 8,
                   DisplayDepthBits 24,
                   DisplayStencilBits 0
                  ] Window
   windowTitle $= "GLSpace display"
-  swapInterval $= 1
+--  swapInterval $= 1
   GL.clearColor $= GL.Color4 0 0 0 0
   GL.clear [GL.ColorBuffer]
   GL.lineSmooth $= GL.Enabled

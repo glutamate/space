@@ -15,11 +15,9 @@ import VectorsL
 import Data.Word
 import Foreign
 
+type Image a = Signal (Vec Two Int) a
 
-type Image n a = Signal (Vec n Int) a
-
-
-loadPNG :: FilePath -> IO (Image Two (Word8,Word8,Word8))
+loadPNG :: FilePath -> IO (Image (Word8,Word8,Word8))
 loadPNG fp = do
   gdim <- GD.loadPngFile fp
   (w,h) <- GD.imageSize gdim
@@ -27,14 +25,14 @@ loadPNG fp = do
   let mf v = toColour `fmap` GD.getPixel (v!0, v!1) gdim
   fillIO 1 lims lims mf
 
-savePNG :: FilePath -> Image Two (Word8, Word8, Word8) -> IO ()
+savePNG :: FilePath -> Image (Word8, Word8, Word8) -> IO ()
 savePNG fp img = do
   let (_,v) = sigLims img
   let (w,h) = ((v!0)+1,(v!1)+1)
   gdIm <- GD.newImage (w,h)
   forM_ [0..w-1] $ \x-> 
         forM_ [0..h-1] $ \y-> do
-            let (r,g,b) = img `at` (x `vcons` y`vcons`vnil)            
+            let (r,g,b) = img `at` (x `vcons` (h-1-y)`vcons`vnil)            
             GD.setPixel (x,y) (rgba (fromIntegral r) (fromIntegral g) (fromIntegral b) 0) gdIm 
   GD.savePngFile fp gdIm
 
@@ -55,10 +53,6 @@ c 2 = (0,0,255)
 c _ = (100,100,100)
 
 
-tcol1 = GD.rgb 250 250 250
-tcol2 = rgba 250 250 250 0
-
-
 rgba :: Word8    -- ^ Red (0-255)
         -> Word8 -- ^ Green (0-255)
         -> Word8 -- ^ Blue (0-255)
@@ -69,7 +63,6 @@ rgba r g b a =
     (fromIntegral r `shiftL` 16) .|.
     (fromIntegral g `shiftL` 8)  .|.
     fromIntegral b
-
 
 showBits :: Bits a => a -> String
 showBits x = let nbs = bitSize x
@@ -82,8 +75,3 @@ toColour c = (red c, green c, blue c) where
   red x =fromIntegral $ (x .&. (GD.rgb 255 0 0)) `shiftR` 16
   green x =fromIntegral $  (x .&. (GD.rgb 0 255 0)) `shiftR` 8
   blue x =fromIntegral $ (x .&. (GD.rgb 0 0 255))
-
-intColToGlCol :: (Double, Double, Double) ->
-                 (Int, Int, Int) 
-intColToGlCol (r, g, b) = (f r, f g, f b) where
-   f int = round $  int * 255
