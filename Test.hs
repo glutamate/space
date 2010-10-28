@@ -11,6 +11,8 @@ import VectorsL
 import GlRender
 import GLToImage
 import Image
+import System.Environment
+
 
 locustScene = GLScene (-0.2, 0.2, -0.15, 0.15, 0.163, 100.0) (0,0,1)
 
@@ -33,8 +35,19 @@ box1 = Cuboid 1 red
 sphere :: Spheroid Three Colour
 sphere = Spheroid 1 red
 
+main = do 
+     getArgs >>= dispatch
 
-main = do
+dispatch ["display"] = display
+dispatch ["reduce"] = reduce
+dispatch _ = display
+
+reduce = do
+   img <- loadJPEG "redcube.jpg"
+   savePNG "redcube.png" img 
+
+
+display = do
    initGlScreen
 --   render locustScene box
 --   waitSecs 0.1 

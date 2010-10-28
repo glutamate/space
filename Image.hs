@@ -17,24 +17,33 @@ import Foreign
 
 type Image a = Signal (Vec Two Int) a
 
-loadPNG :: FilePath -> IO (Image (Word8,Word8,Word8))
-loadPNG fp = do
-  gdim <- GD.loadPngFile fp
+gdToImage :: GD.Image -> IO (Image (Word8,Word8,Word8))
+gdToImage gdim = do
   (w,h) <- GD.imageSize gdim
-  let lims = (0, w `vcons` h `vcons` vnil)
-  let mf v = toColour `fmap` GD.getPixel (v!0, v!1) gdim
+  let lims = (0, (w-1) `vcons` (h-1) `vcons` vnil)
+  let mf v = toColour `fmap` GD.getPixel (v!0, h-1-(v!1)) gdim
   fillIO 1 lims lims mf
 
-savePNG :: FilePath -> Image (Word8, Word8, Word8) -> IO ()
-savePNG fp img = do
+
+imageToGD :: Image (Word8, Word8, Word8) -> IO (GD.Image)
+imageToGD img = do
   let (_,v) = sigLims img
   let (w,h) = ((v!0)+1,(v!1)+1)
   gdIm <- GD.newImage (w,h)
   forM_ [0..w-1] $ \x-> 
         forM_ [0..h-1] $ \y-> do
             let (r,g,b) = img `at` (x `vcons` (h-1-y)`vcons`vnil)            
-            GD.setPixel (x,y) (rgba (fromIntegral r) (fromIntegral g) (fromIntegral b) 0) gdIm 
-  GD.savePngFile fp gdIm
+            GD.setPixel (x,y) (rgba (fromIntegral r) (fromIntegral g) (fromIntegral b) 0) gdIm
+  return gdIm 
+
+
+loadPNG, loadJPEG :: FilePath -> IO (Image (Word8,Word8,Word8))
+loadPNG fp = GD.loadPngFile fp >>= gdToImage
+loadJPEG fp = GD.loadJpegFile fp >>= gdToImage
+  
+savePNG, saveJPEG :: FilePath -> Image (Word8, Word8, Word8) -> IO ()
+savePNG fp img = imageToGD img >>=  GD.savePngFile fp 
+saveJPEG fp img = imageToGD img >>=  GD.saveJpegFile 95 fp 
 
 ti = do loadPNG "test.png"
         return ()
