@@ -14,7 +14,14 @@ import Image
 import System.Environment
 
 
-locustScene = GLScene (-0.2, 0.2, -0.15, 0.15, 0.163, 100.0) white (1,1,1) up
+ambient = (0.2,0.2,0.2)
+diffuse = (0.8,0.8,0.8)
+specular = (0.5,0.5,0.5)
+
+lightLoc = scalarMul 30 (uvx+uvy)
+
+locustScene = GLScene (-0.2, 0.2, -0.15, 0.15, 0.163, 100.0) 
+               white ambient diffuse specular lightLoc
 
  
 red = (255,0,0)
@@ -23,7 +30,7 @@ green = (0,255,0)
 
 white = (255, 255, 255)
 
-away = scalarMul (-2.0) uvz
+away = scalarMul (-3.0) uvz
 up = scalarMul (5.0) uvy
 left= scalarMul (5.0) uvx
 
@@ -55,9 +62,9 @@ display = do
 --   waitSecs 1
 --   render locustScene $ Translated away box1
 --   waitSecs 0.1
---   render locustScene $ Translated away sphere
-
+   render locustScene $ Translated away sphere
+   waitSecs 0.1
    im<- renderToImage locustScene $ Translated away $ Rotated 45 left $  Rotated (45) up $ box1
-   waitSecs 10
+   --waitSecs 10
    savePNG "test4.png" $  im
  

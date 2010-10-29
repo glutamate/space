@@ -19,6 +19,7 @@ type One = S Z
 type Two = S One
 type Three = S Two
 type Four = S Three
+type Five = S Four
 
 type family Plus a b :: *
 

@@ -19,9 +19,10 @@ instance Surface a => Renderable (Polygon Three a) where
          GL.renderPrimitive GL.Polygon $ forM_ pts $ GL.vertex . vertex3d 
 
 instance Surface a => Renderable (Quads Three a) where
-    renderIt (Quads pts) = forM_ pts $ \(vs, col) -> withSurface col $ do
-         GL.renderPrimitive GL.Quads $ forM_ (vecToList vs) $ GL.vertex . vertex3d 
-
+    renderIt (Quads pts col) = withSurface col $ do
+         GL.renderPrimitive GL.Quads $ forM_ pts $ \(vs, norm)-> do
+                  GL.normal $ vecToNormal norm
+                  forM_ (vecToList vs) $ GL.vertex . vertex3d 
 
 instance Surface a => Renderable (Cuboid Three a) where
     renderIt (Cuboid v col) = withSurface col $ renderIt box
