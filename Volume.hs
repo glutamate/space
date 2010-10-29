@@ -35,6 +35,13 @@ data Translated v n a where
 instance Volume v => Volume (Translated v) where
     inside (Translated vtr vol) vp = inside vol $ (vp-vtr)
 
+data Rotated v n a where
+   Rotated :: Nat n => Double -> Vec n Double -> v n a -> Rotated v n a
+
+instance Volume v => Volume (Rotated v) where
+    inside (Rotated angle vrot vol) vp = inside vol $ (vp-vrot) --FIXME
+
+
 data Union v1 v2 s a where
    Union :: v1 s a -> v2 s a -> Union v1 v2 s a
 

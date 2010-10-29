@@ -18,6 +18,7 @@ newtype S a = S { unS :: a }
 type One = S Z
 type Two = S One
 type Three = S Two
+type Four = S Three
 
 type family Plus a b :: *
 

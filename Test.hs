@@ -14,20 +14,22 @@ import Image
 import System.Environment
 
 
-locustScene = GLScene (-0.2, 0.2, -0.15, 0.15, 0.163, 100.0) (0,0,1)
+locustScene = GLScene (-0.2, 0.2, -0.15, 0.15, 0.163, 100.0) white (1,1,1) up
 
  
 red = (255,0,0)
 blue = (0,0,255)
+green = (0,255,0)
 
-away = scalarMul (-10.0) uvz
+white = (255, 255, 255)
+
+away = scalarMul (-2.0) uvz
 up = scalarMul (5.0) uvy
 left= scalarMul (5.0) uvx
 
 
-
-box :: [Polygon Three Colour]
-box = translates away $ tags red $ unitBox3
+box :: Quads Three Colour
+box =  tag red unitBox3
 
 box1 :: Cuboid Three Colour
 box1 = Cuboid 1 red
@@ -39,7 +41,7 @@ main = do
      getArgs >>= dispatch
 
 dispatch ["display"] = display
-dispatch ["reduce"] = reduce
+dispatch ["reduce"] = reduce 
 dispatch _ = display
 
 reduce = do
@@ -50,11 +52,12 @@ reduce = do
 display = do
    initGlScreen
 --   render locustScene box
---   waitSecs 0.1 
+--   waitSecs 1
 --   render locustScene $ Translated away box1
 --   waitSecs 0.1
 --   render locustScene $ Translated away sphere
---   waitSecs 0.1
-   im<- renderToImage locustScene $ Translated (away+up+left) sphere
+
+   im<- renderToImage locustScene $ Translated away $ Rotated 45 left $  Rotated (45) up $ box1
+   waitSecs 10
    savePNG "test4.png" $  im
  

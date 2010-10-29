@@ -18,10 +18,15 @@ instance Surface a => Renderable (Polygon Three a) where
     renderIt (Poly pts col) = withSurface col $ do
          GL.renderPrimitive GL.Polygon $ forM_ pts $ GL.vertex . vertex3d 
 
+instance Surface a => Renderable (Quads Three a) where
+    renderIt (Quads pts) = forM_ pts $ \(vs, col) -> withSurface col $ do
+         GL.renderPrimitive GL.Quads $ forM_ (vecToList vs) $ GL.vertex . vertex3d 
+
+
 instance Surface a => Renderable (Cuboid Three a) where
     renderIt (Cuboid v col) = withSurface col $ renderIt box
        where --box :: [Polygon Three a]
-             box = map (polyTag col) $ map (stretchPoly v) $ unitBox3
+             box = tag col $ stretch v $ unitBox3
 
 instance Surface a => Renderable (Spheroid Three a) where
     renderIt (Spheroid v col) = GL.preservingMatrix $ withSurface col $ do
@@ -44,6 +49,15 @@ instance (Surface a, Renderable (r Three a))
                                    (glf $ v!1) 
                                    (glf $ v!2)
          renderIt vol
+ 
+instance (Surface a, Renderable (r Three a)) 
+            => Renderable (Rotated r Three a) where
+    renderIt (Rotated angle vrot vol) = GL.preservingMatrix $ do
+         GL.rotate (realToFrac angle) $ GL.Vector3 (glf $ vrot!0) 
+                                                   (glf $ vrot!1) 
+                                                   (glf $ vrot!2)
+         renderIt vol
+
 
 
 instance (Surface a, Renderable (r1 Three a), Renderable (r2 Three a)) 
