@@ -12,12 +12,9 @@ data Polygon n a where
      Poly :: [Vec n Double] -> a -> Polygon n a 
 
 data Quads n a where 
-     Quads :: [(Vec Four (Vec n Double), a)] -> Quads n a 
+     Quads :: [(Vec Four (Vec n Double), Vec n Double)] -> a -> Quads n a 
 
-quadMapVs :: (Vec Four (Vec n Double) -> Vec Four (Vec n Double))
-     -> Quads n a
-     -> Quads n a
-quadMapVs f (Quads vs') = Quads $ map (\(vs,p)-> (f vs,p)) vs'
+quadMapVs f (Quads vs x)  = Quads (map (onFst f) vs) x
 
 quadRev = quadMapVs vrev
 
@@ -25,17 +22,19 @@ instance Functor (Polygon n) where
     fmap f (Poly pts x) = Poly pts $ f x
  
 instance Functor (Quads n) where 
-    fmap f (Quads pts) = Quads $ map (\(vs,p)-> (vs,f p)) pts
+    fmap f (Quads pts x) = Quads pts $ f x
 
 unitBox3 :: Quads Three ()
 unitBox3 = uB where
-  fz,fx, fy :: (Vec Four (Vec Three Double), ())
-  fz =  ((orig`vcons`uvx`vcons`(uvx+uvy)`vcons`uvy`vcons`vnil), ())
-  fx =  ((orig`vcons`uvy`vcons`(uvz+uvy)`vcons`uvz`vcons`vnil), ())
-  fy =  ((orig`vcons`uvz`vcons`(uvz+uvx)`vcons`uvx`vcons`vnil), ())
-  shiftBox = Quads [fz, fy,  fx , (onFst (fmap (+uvx) . vrev) fx),
-                                      (onFst (fmap (+uvy) . vrev) fy),
-                                      (onFst (fmap (+uvz) . vrev) fz) ] 
+  fz,fx, fy :: (Vec Four (Vec Three Double), Vec Three Double)
+  fz =  ((orig`vcons`uvx`vcons`(uvx+uvy)`vcons`uvy`vcons`vnil), negate uvz)
+  fx =  ((orig`vcons`uvy`vcons`(uvz+uvy)`vcons`uvz`vcons`vnil), negate uvx)
+  fy =  ((orig`vcons`uvz`vcons`(uvz+uvx)`vcons`uvx`vcons`vnil), negate uvy)
+  otherSide :: (Vec Four (Vec Three Double), Vec Three Double) -> (Vec Four (Vec Three Double), Vec Three Double)
+  otherSide (vs, normal) = ((fmap (subtract normal) . vrev) vs, negate normal) 
+  shiftBox = Quads [fz, fy,  fx, otherSide fx,
+                                 otherSide fy,
+                                 otherSide fz] () 
   uB = translate (negate $ uvx/2+uvz/2+uvy/2) $ shiftBox
 
 
