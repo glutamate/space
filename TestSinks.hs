@@ -5,9 +5,9 @@ module Main where
 import System.Environment
 
 --readSource "foo" args 
-foo <* getArgs  
+foo <* readFile "space.cabal"
 
-foo *> print
+foo *> putStr
 
 --foz <* argz ()
 

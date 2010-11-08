@@ -26,13 +26,13 @@ import qualified Data.Array.CArray as CA
 import System.IO.Unsafe
  
 newtype Time = Time Double 
-    deriving (Eq, Show, Num, Fractional, Floating, Discretizable, IsDouble)
+    deriving (Eq, Show, Num, Fractional, Floating, Discretizable, IsDouble, Storable)
 newtype Freq = Freq Double 
-    deriving (Eq, Show, Num, Fractional, Floating, Discretizable, IsDouble)
+    deriving (Eq, Show, Num, Fractional, Floating, Discretizable, IsDouble, Storable)
 newtype Length = Length Double 
-    deriving (Eq, Show, Num, Fractional, Floating, Discretizable, IsDouble)
+    deriving (Eq, Show, Num, Fractional, Floating, Discretizable, IsDouble, Storable)
 newtype SpaceFreq = SpaceFreq Double 
-    deriving (Eq, Show, Num, Fractional, Floating, Discretizable, IsDouble)
+    deriving (Eq, Show, Num, Fractional, Floating, Discretizable, IsDouble, Storable)
 
 class (Eq a,Show a,Num a,Fractional a,Floating a)=> IsDouble a where
     toDouble :: a -> Double
@@ -169,7 +169,7 @@ instance HasInverse a => HasInverse (Vec n a) where
       invertValue = fmap invertValue
 
 data Signal a b where
-    Signal  :: (Discretizable a, {-Ix (Discretized a),-} Storable b) =>  
+    Signal  :: (Discretizable a, {-Ix (Discretized a),-} Storable b, Storable a) =>  
                a -> (a,a) -> (Inv a, Inv a) -> SV.Vector b -> Signal a b
     SigFmap :: (b->b') -> Signal a b -> Signal a b'
     SigFun  :: (a->b) -> Signal a b
@@ -198,17 +198,28 @@ at (Signal delta lims _ arr) x =  arr `SV.index` (discreteIndex lims delta x)
 at (SigFmap f s) x = f $ s `at` x
 at (SigFun f) x = f x
 
-fill :: (Discretizable a, Storable b) => 
+fill :: (Discretizable a, Storable b, Storable a) => 
         a -> (a,a) -> (Inv a, Inv a) -> (a->b) -> Signal a b
 fill delta lims invlims f = 
      Signal delta lims invlims $ SV.pack $ map f $ discreteRange lims delta
 
-fillIO' :: (Discretizable a, Storable b, Show a) => 
+trans :: Storable c => (a->c) -> Signal a b -> Signal a c
+trans f (Signal delta lims ilims arr) = Signal delta lims ilims newarr where
+    newarr = SV.pack $ map f $ discreteRange lims delta
+
+
+trans' :: Storable c => (a->b->c) -> Signal a b -> Signal a c
+trans' f (Signal delta lims ilims arr) = Signal delta lims ilims newarr where
+    newarr = SV.pack $ map (uncurry f) $ zip (discreteRange lims delta) (SV.unpack arr)
+--    newarr = SV.zipWith f (SV.pack $ discreteRange lims delta) (arr)
+
+--DOESNT WORK -- problem may be in foldRangeM implementation
+fillIO' :: (Discretizable a, Storable b, Show a, Storable a) => 
           a -> (a,a) -> (Inv a, Inv a) -> (a->IO b) -> IO (Signal a b)
 fillIO' delta lims invlims mf = do
   let n = discreteRngLength lims delta
   print n
-  stv <- stToIO $ SVST.new_ (n+1800)
+  stv <- stToIO $ SVST.new_ (n+1800) --FUDGE
   let f ixv nix = do v <- mf ixv
                      --print (ixv, nix)
                      stToIO $ SVST.write stv nix v
@@ -217,7 +228,7 @@ fillIO' delta lims invlims mf = do
   sv <- stToIO $ SVST.unsafeFreeze stv
   return $ Signal delta lims invlims sv
 
-fillIO :: (Discretizable a, Storable b, Show a) => 
+fillIO :: (Discretizable a, Storable b, Show a, Storable a) => 
           a -> (a,a) -> (Inv a, Inv a) -> (a->IO b) -> IO (Signal a b)
 fillIO delta lims invlims mf = do
   let rng = discreteRange lims delta
@@ -249,7 +260,7 @@ instance X SpaceFreq (Complex Double) where
 --instance X (Vec Z Length) (Complex Double) where
 --    fourier = undefined
  
-instance (Nat n, X (Vec n Length) (Complex Double), 
+instance (Nat n, X (Vec n Length) (Complex Double), Storable (Vec n SpaceFreq), 
           Discretizable (Vec n SpaceFreq), Ix (Vec n Int), CA.Shapable (Vec n Int)) 
     => X (Vec n Length) (Complex Double) where
     fourier s@(Signal d lims invlims arr) = 

@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableInstances, RecordWildCards #-}
 {-# OPTIONS_GHC -fglasgow-exts #-}
 module Main where
 
@@ -12,6 +13,12 @@ import GlRender
 import GLToImage
 import Image
 import System.Environment
+
+--data Rec = Rec { foo :: Int, bar :: Double}
+
+--x = Rec 1 3
+--Rec {..} = x
+--z = foo
 
 
 ambient = (0.2,0.2,0.2)
