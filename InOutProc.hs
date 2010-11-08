@@ -44,6 +44,18 @@ main = do
   --(print) $  mmod
   writeFile out $ prettyPrint $ mapDecls theTrans mmod
 
-
-
  
+chomp (' ':s) = chomp s
+chomp s = s
+ 
+
+splitInlit :: [String] -> [String]
+splitInlit = sI [] [] where
+  sI tl mn [] = reverse tl ++ 
+                ["main = do"] ++
+                reverse (map ("   "++) mn)
+  sI tl mn (('>':'>':ln):lns) = sI (chomp ln:tl) mn lns
+  sI tl mn (('>':ln):lns) = sI (ln:tl) (("putStrLn "++show (chomp ln)):mn) lns
+  sI tl mn (('=':'>':ln):lns) = sI tl (("putStrLn ("++chomp ln++")"):mn) lns
+  sI tl mn (ln:lns) = sI tl (("putStrLn "++show ln):mn) lns
+  
